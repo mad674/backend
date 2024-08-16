@@ -1,0 +1,10 @@
+const vendorController=require('../controllers/VendorController');
+const express=require('express');
+const router=express.Router();
+router.post('/register',vendorController.vendorRegister);
+router.post('/login',vendorController.vendorLogin);
+router.get('/allvendor',vendorController.getvendor);
+router.get('/singlevendor/:id',vendorController.single);
+router.put('/updatevendor/:id',vendorController.updateVendor);
+router.delete('/deletevendor/:id',vendorController.deleteVendor);
+module.exports=router;
