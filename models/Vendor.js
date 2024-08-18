@@ -9,7 +9,12 @@ const vendorSchema=new mongoose.Schema({
     password:{
         type:String,
         required:true
-    }
+    },
+    images:{
+        type:[String],
+        default:[]
+        // required:true
+    },
 });
 
 module.exports=mongoose.model('Vendor',vendorSchema)
