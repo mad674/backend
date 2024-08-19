@@ -21,7 +21,7 @@ const upload = multer({
 });
 router.post('/imgvendor/:id', upload.array('images',10), vendorController.imgvendor);
 router.get('/getimg/:id',vendorController.getimage);
-router.put('/delimg/:id', vendorController.deleteImg);
+router.put('/delimges/:id', vendorController.deleteImg);
 router.delete('/delimg/:id/:Name', vendorController.deleteImage);
 router.post('/imgvendor/:id',vendorController.imgvendor);
 // router.put('/updatevendor/:id', async (req, res) => {

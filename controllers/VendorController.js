@@ -206,22 +206,39 @@ const getimage = async (req, res) => {
     }
 };
 
-const deleteImg = async (req, res) => {
+const deleteImg= async (req, res) => {
     try {
-      const user = await vendor.findById(req.params.id);; // Corrected this line
-      console.log("user",user);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-      user.images = [];
-      await user.save();
-  
-      res.status(200).json({ message: 'all images deleted successfully' });
+    //   const { vendorId } = req.params;
       
+      // Find the vendor by ID
+      const vendor = await Vendor.findById(req.params.id);
+      if (!vendor) {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+      console.log(vendor);
+      // Delete each image file from the uploads folder
+      for (const image of vendor.images) {
+        const filePath = path.join(__dirname, '../uploads/', image);
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error('Error deleting image file:', err);
+          }
+        });
+      }
+  
+      // Clear the images array
+      vendor.images = [];
+      
+      // Save the vendor after removing all image references
+      await vendor.save();
+  
+      res.json({ message: 'All images deleted successfully' });
+    //   window.location.reload();
     } catch (error) {
-      console.error('Error updating password:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      console.error('Error deleting all images:', error);
+      res.status(500).json({ error: 'Server error' });
     }
-}
+  };
+  
 
 module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage ,deleteImg};
