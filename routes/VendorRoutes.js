@@ -23,5 +23,35 @@ router.post('/imgvendor/:id', upload.array('images',10), vendorController.imgven
 router.get('/getimg/:id',vendorController.getimage);
 router.delete('/delimg/:id/:Name', vendorController.deleteImage);
 // router.post('/imgvendor/:id',vendorController.imgvendor);
+// router.put('/updatevendor/:id', async (req, res) => {
+//     const { vendorid } = req.params;
+//     const { password } = req.body;
+  
+//     try {
+//       // Validate input
+//       if (!password) {
+//         return res.status(400).json({ message: 'Password is required' });
+//       }
+  
+//       // Find user
+//       const user = await user.findById(vendorid);
+//       if (!user) {
+//         return res.status(404).json({ message: 'User not found' });
+//       }
+  
+//       // Hash new password
+//       const saltRounds = 10;
+//       const hashedPassword = await bcrypt.hash(password, saltRounds);
+      
+//       // Update password
+//       user.password = hashedPassword;
+//       await user.save();
+  
+//       res.status(200).json({ message: 'Password updated successfully' });
+//     } catch (error) {
+//       console.error('Error updating password:', error);
+//       res.status(500).json({ message: 'Internal server error' });
+//     }
+//   });
 module.exports=router;
 

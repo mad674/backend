@@ -21,7 +21,6 @@ const vendorRegister = async (req, res) => {
         });
         await newVendor.save();
         const token = jwt.sign({ id: newVendor._id }, secretkey);
-
         res.status(201).json({ msg: 'vendor created successfully', success: true, token });
         console.log('registered successfully',token);
     } catch (err) {
@@ -72,17 +71,36 @@ const single = async (req, res) => {
 }
 
 const updateVendor = async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        const updatedVendor = await vendor.findByIdAndUpdate(req.params.id, { username, password });
-        if (!updatedVendor) {
-            return res.status(404).json({ msg: 'employee not found' });
-        }
-        res.status(200).json({ updatedVendor, success: true });
-    } catch (err) {
-        res.status(500).json({ error: 'internal server error', success: false });
+    // const { vendorid } = req.params.id;
+    const { password } = req.body;
+  
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required' });
     }
-}
+    console.log(password);
+    try {
+    //   console.log("vendorid",vendorid);
+      // Initialize and find user
+      const user = await vendor.findById(req.params.id);; // Corrected this line
+      console.log("user",user);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      // Hash and update password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      console.log("hashedPassword",hashedPassword);
+      user.password = hashedPassword;
+      await user.save();
+  
+      res.status(200).json({ message: 'Password updated successfully' });
+      
+    } catch (error) {
+      console.error('Error updating password:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  };
+
 
 const deleteVendor = async (req, res) => {
     try {
