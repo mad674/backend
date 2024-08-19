@@ -206,6 +206,22 @@ const getimage = async (req, res) => {
     }
 };
 
+const deleteImg = async (req, res) => {
+    try {
+      const user = await vendor.findById(req.params.id);; // Corrected this line
+      console.log("user",user);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      user.images = [];
+      await user.save();
+  
+      res.status(200).json({ message: 'all images deleted successfully' });
+      
+    } catch (error) {
+      console.error('Error updating password:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+}
 
-
-module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage };
+module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage ,deleteImg};
