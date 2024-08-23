@@ -263,7 +263,7 @@ const forgotmail=async(req,res)=>{
             // from: 'nsachingoud@gmail.com', // sender address
             to: email, // list of receivers
             subject: "Verify Your Email", // Subject line
-            text: "otp generated", // plain text body
+            text: "new otp generated", // plain text body
             html: `<p>Enter <b>${gotp}</b> in the app to verify your email address</p><p>This code will expire in 5 minutes</p>`
           });
           const hashedotp=await bcrypt.hash(gotp,10);
