@@ -255,8 +255,8 @@ const forgotmail=async(req,res)=>{
         var transporter = nodemailer.createTransport({
             service: "gmail",//gmail
             auth: {
-              user: "patternsjewellery@gmail.com",
-              pass: "vhclieocwtxelasq"
+              user: process.env.Gmail,
+              pass: process.env.PASS
             }
           });
           const info = await transporter.sendMail({
