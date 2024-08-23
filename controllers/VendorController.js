@@ -3,12 +3,13 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 const multer = require('multer');
+const nodemailer = require("nodemailer");
 dotenv.config();
 
 const secretkey = process.env.Whatisyourname;
 
 const vendorRegister = async (req, res) => {
-    const { username, password, confirmPassword } = req.body;
+    const { username,email, password, confirmPassword } = req.body;
     try {
         const vendorEmail = await vendor.findOne({ username });
         if (vendorEmail) {
@@ -17,6 +18,7 @@ const vendorRegister = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const newVendor = await vendor.create({
             username,
+            email,
             password: hashedPassword
         });
         await newVendor.save();
@@ -239,6 +241,46 @@ const deleteImg= async (req, res) => {
       res.status(500).json({ error: 'Server error' });
     }
   };
-  
 
-module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage ,deleteImg};
+const forgotmail=async(req,res)=>{
+    const {email}=req.body;
+    const vendorEmail = await vendor.findOne({ email });
+    try{
+        const gotp=`${Math.floor(1000+Math.random()*9000)}`;
+        // console.log(gotp);
+        var transporter = nodemailer.createTransport({
+            service: "gmail",//gmail
+            auth: {
+              user: "patternsjewellery@gmail.com",
+              pass: "vhclieocwtxelasq"
+            }
+          });
+          const info = await transporter.sendMail({
+            // from: 'nsachingoud@gmail.com', // sender address
+            to: email, // list of receivers
+            subject: "Verify Your Email", // Subject line
+            text: "otp generated", // plain text body
+            html: `<p>Enter <b>${gotp}</b> in the app to verify your email address</p><p>This code will expire in 5 minutes</p>`
+          });
+          const hashedotp=await bcrypt.hash(gotp,10);
+          const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: '1d' });
+          if(info.messageId){
+            let user=await vendor.findOneAndUpdate(
+                {email},
+                {otp:hashedotp},
+                {createdAt:Date.now()},
+                {expiresAt:Date.now()+300000},
+            );
+
+            if(!user){
+                return res.status(404).json({message:"user not found"});
+            }
+            return res.status(200).json({message:"otp send to your email",success:true,token:token});
+          }
+    }catch(err){
+        console.log(err);
+        return res.status(500).json({message:"Internal server error"});
+    }
+}
+
+module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage ,deleteImg,forgotmail};

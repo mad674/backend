@@ -6,6 +6,10 @@ const vendorSchema=new mongoose.Schema({
         required:true,
         unique:true
     },
+    email:{
+        type:String,
+        required:true
+    },
     password:{
         type:String,
         required:true
@@ -15,6 +19,12 @@ const vendorSchema=new mongoose.Schema({
         default:[]
         // required:true
     },
+    otp:{
+        type:String,
+        default:0
+    },
+    createdAt:Date,
+    expiresAt:Date,
 });
 
 module.exports=mongoose.model('Vendor',vendorSchema)
