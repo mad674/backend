@@ -286,58 +286,7 @@ const forgotmail=async(req,res)=>{
         return res.status(500).json({message:"Internal server error"});
     }
 }
-// const forgotmail = async (req, res) => {
-//     const { email } = req.body;
-//     try {
-//         const vendorEmail = await vendor.findOne({ email });
-//         if (!vendorEmail) {
-//             return res.status(404).json({ message: "User not found" });
-//         }
 
-//         const gotp = `${Math.floor(1000 + Math.random() * 9000)}`;
-//         const hashedOtp = await bcrypt.hash(gotp, 10);
-
-//         const transporter = nodemailer.createTransport({
-//             service: "gmail",
-//             auth: {
-//                 user: "patternsjewellery@gmail.com",
-//                 pass: "vhclieocwtxelasq"
-//             },
-//         });
-
-//         const info = await transporter.sendMail({
-//             to: email,
-//             subject: "Verify Your Email",
-//             text: "OTP generated",
-//             html: `<p>Enter <b>${gotp}</b> in the app to verify your email address</p><p>This code will expire in 5 minutes</p>`,
-//         });
-
-//         if (info.messageId) {
-//             const token = jwt.sign({ vendorid: vendorEmail._id }, process.env.SECRET_KEY, { expiresIn: '1d' });
-
-//             const user = await vendor.findOneAndUpdate(
-//                 { email },
-//                 {
-//                     otp: hashedOtp,
-//                     createdAt: Date.now(),
-//                     expiresAt: Date.now() + 300000, // Expires in 5 minutes
-//                 },
-//                 { new: true } // Return the updated document
-//             );
-
-//             if (!user) {
-//                 return res.status(404).json({ message: "User not found" });
-//             }
-
-//             return res.status(200).json({ message: "OTP sent to your email", success: true, token });
-//         } else {
-//             return res.status(500).json({ message: "Failed to send OTP" });
-//         }
-//     } catch (err) {
-//         console.error(err);
-//         return res.status(500).json({ message: "Internal server error" });
-//     }
-// };
 
 
 module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage ,deleteImg,forgotmail};
