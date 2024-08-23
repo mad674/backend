@@ -12,6 +12,10 @@ const vendorRegister = async (req, res) => {
     const { username,email, password, confirmPassword } = req.body;
     try {
         const vendorEmail = await vendor.findOne({ username });
+        const emailverfy=await vendor.findOne({email});
+        if(emailverfy){
+            return res.status(400).json({ msg: 'email already exists' });
+        }
         if (vendorEmail) {
             return res.status(400).json({ msg: 'username already exists' });
         }
