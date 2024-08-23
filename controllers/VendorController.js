@@ -256,7 +256,7 @@ const forgotmail=async(req,res)=>{
             service: "gmail",//gmail
             auth: {
               user: process.env.Gmail,
-              pass: process.env.Pass
+              pass: process.env.PASS
             }
           });
           const info = await transporter.sendMail({
