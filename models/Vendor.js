@@ -3,7 +3,7 @@ const mongoose=require('mongoose');
 const vendorSchema=new mongoose.Schema({
     username:{
         type:String,
-        required:true,
+        // required:true,
         unique:true
     },
     email:{
@@ -12,7 +12,7 @@ const vendorSchema=new mongoose.Schema({
     },
     password:{
         type:String,
-        required:true
+        // required:true
     },
     images:{
         type:[String],

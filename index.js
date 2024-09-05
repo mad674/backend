@@ -23,14 +23,14 @@
 // })
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 4123;
+const PORT = process.env.PORT || 4000;
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const vendorRoutes = require('./routes/VendorRoutes');
 const cors = require('cors');
 const path=require('path');
 dotenv.config();
-
+// const authRouter=require('./routes/authRouter');
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Connected to MongoDB'))
@@ -45,6 +45,7 @@ app.use('/vendor', vendorRoutes);
 app.use('/home', (req, res) => {
     res.send('<h1>Welcome to Jewelry</h1>');
 });
+// app.use('/auth',authRouter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Start the server
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

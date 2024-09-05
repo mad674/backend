@@ -37,5 +37,6 @@ router.post('/comparepassword',async(req,res)=>{
         res.send({message:"password not matched",success:false});
     }
 });
+router.post('/google',vendorController.googlelogin);
 module.exports=router;
 

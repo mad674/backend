@@ -5,9 +5,11 @@ const dotenv = require('dotenv');
 const multer = require('multer');
 const nodemailer = require("nodemailer");
 dotenv.config();
-
+const querystring = require('querystring');
+var https = require('follow-redirects').https;
+const { v4: uuidv4 } = require('uuid');
+var messageId = uuidv4();
 const secretkey = process.env.Whatisyourname;
-
 const vendorRegister = async (req, res) => {
     const { username,email, password, confirmPassword } = req.body;
     try {
@@ -198,6 +200,7 @@ const deleteImage = async (req, res) => {
 };
 
 const mongoose = require('mongoose');
+const { oauth2Client } = require('../Middlewares/googleconfig');
 
 const getimage = async (req, res) => {
     try {
@@ -248,45 +251,78 @@ const deleteImg= async (req, res) => {
 
 const forgotmail=async(req,res)=>{
     const {email}=req.body;
-    const vendorEmail = await vendor.findOne({ email });
-    try{
-        const gotp=`${Math.floor(1000+Math.random()*9000)}`;
-        // console.log(gotp);
-        var transporter = nodemailer.createTransport({
-            service: "gmail",//gmail
-            auth: {
-              user: process.env.Gmail,
-              pass: process.env.PASS
-            }
-          });
-          const info = await transporter.sendMail({
-            // from: 'nsachingoud@gmail.com', // sender address
-            to: email, // list of receivers
-            subject: "Verify Your Email", // Subject line
-            text: "new otp generated", // plain text body
-            html: `<p>Enter <b>${gotp}</b> in the app to verify your email address</p><p>This code will expire in 5 minutes</p>`
-          });
-          const hashedotp=await bcrypt.hash(gotp,10);
-          const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: '1d' });
-          if(info.messageId){
-            let user=await vendor.findOneAndUpdate(
-                {email},
-                {otp:hashedotp},
-                {createdAt:Date.now()},
-                {expiresAt:Date.now()+300000},
-            );
+    console.log(email);
+        const vendorEmail = await vendor.findOne({ email });
+        try{
+            const gotp=`${Math.floor(1000+Math.random()*9000)}`;
+            // console.log(gotp);
+            var transporter = nodemailer.createTransport({
+                service: "gmail",//gmail
+                auth: {
+                user: process.env.Gmail,
+                pass: process.env.PASS
+                }
+            });
+            const info = await transporter.sendMail({
+                // from: 'nsachingoud@gmail.com', // sender address
+                to: email, // list of receivers
+                subject: "Verify Your Email", // Subject line
+                text: "new otp generated", // plain text body
+                html: `<p>Enter <b>${gotp}</b> in the app to verify your email address</p><p>This code will expire in 5 minutes</p>`
+            });
+            const hashedotp=await bcrypt.hash(gotp,10);
+            const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: '1d' });
+            if(info.messageId){
+                let user=await vendor.findOneAndUpdate(
+                    {email},
+                    {otp:hashedotp},
+                    {createdAt:Date.now()},
+                    {expiresAt:Date.now()+300000},
+                    {new: true }
+                );
 
-            if(!user){
-                return res.status(404).json({message:"user not found"});
+                if(!user){
+                    return res.status(404).json({message:"user not found"});
+                }
+                return res.status(200).json({message:"otp send to your email",success:true,token:token});
             }
-            return res.status(200).json({message:"otp send to your email",success:true,token:token});
-          }
-    }catch(err){
-        console.log(err);
-        return res.status(500).json({message:"Internal server error"});
-    }
+        }catch(err){
+            console.log(err);
+            return res.status(500).json({message:"Internal server error"});
+        }
+    
 }
+const googlelogin = async (req, res) => {
+    try {
+        const { code } = req.body; 
+        const googleres = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(googleres.tokens);
+
+        const userdata = await fetch(`https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleres.tokens.access_token}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${googleres.tokens.access_token}`
+            }
+        });
+
+        const userDataJson = await userdata.json();
+        const { email } = userDataJson;
+
+        let vendorEmail = await vendor.findOne({ email });
+        if (!vendorEmail) {
+            vendorEmail = await vendor.create({ email,username:email.split('@')[0] });
+        }
+
+        const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: '1d' });
+
+        return res.status(200).json({ message: "User found", success: true, token: token });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
 
 
 
-module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage ,deleteImg,forgotmail};
+
+module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage ,deleteImg,forgotmail,googlelogin};
