@@ -28,9 +28,9 @@ const vendorRegister = async (req, res) => {
             password: hashedPassword
         });
         await newVendor.save();
-        const token = jwt.sign({ id: newVendor._id }, secretkey);
+        const token = jwt.sign({ id: newVendor._id }, secretkey, { expiresIn: process.env.JWT_EXPIRE });
         res.status(201).json({ msg: 'vendor created successfully', success: true, token });
-        console.log('registered successfully',token);
+        // console.log('registered successfully',token);
     } catch (err) {
         console.log(err);
         res.status(500).json({ error: 'internal server error', success: false });
@@ -48,7 +48,7 @@ const vendorLogin = async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ msg: 'wrong password' });
         }
-        const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: '1d' });
+        const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: process.env.JWT_EXPIRE });
         const vendorid = vendorEmail._id;
         res.status(200).json({ msg: 'login successfully', token, vendorid, success: true });
     } catch (err) {
@@ -97,7 +97,7 @@ const updateVendor = async (req, res) => {
       // Hash and update password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      console.log("hashedPassword",hashedPassword);
+    //   console.log("hashedPassword",hashedPassword);
       user.password = hashedPassword;
       await user.save();
   
@@ -224,7 +224,7 @@ const deleteImg= async (req, res) => {
       if (!vendor) {
         return res.status(404).json({ error: 'Vendor not found' });
       }
-      console.log(vendor);
+    //   console.log(vendor);
       // Delete each image file from the uploads folder
       for (const image of vendor.images) {
         const filePath = path.join(__dirname, '../uploads/', image);
@@ -271,7 +271,7 @@ const forgotmail=async(req,res)=>{
                 html: `<p>Enter <b>${gotp}</b> in the app to verify your email address</p><p>This code will expire in 5 minutes</p>`
             });
             const hashedotp=await bcrypt.hash(gotp,10);
-            const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: '1d' });
+            const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: process.env.JWT_EXPIRE });
             if(info.messageId){
                 let user=await vendor.findOneAndUpdate(
                     {email},
@@ -306,14 +306,15 @@ const googlelogin = async (req, res) => {
         });
 
         const userDataJson = await userdata.json();
-        const { email } = userDataJson;
+        // console.log("userde",userDataJson);
+        const { email,name } = userDataJson;
 
         let vendorEmail = await vendor.findOne({ email });
         if (!vendorEmail) {
-            vendorEmail = await vendor.create({ email,username:email.split('@')[0] });
+            vendorEmail = await vendor.create({ email,username:name });
         }
 
-        const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: '1d' });
+        const token = jwt.sign({ vendorid: vendorEmail._id }, secretkey, { expiresIn: process.env.JWT_EXPIRE });
 
         return res.status(200).json({ message: "User found", success: true, token: token });
     } catch (err) {
@@ -321,8 +322,5 @@ const googlelogin = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
-
-
 
 module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage ,deleteImg,forgotmail,googlelogin};
