@@ -38,11 +38,11 @@ const vendorRegister = async (req, res) => {
 }
 
 const vendorLogin = async (req, res) => {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     try {
-        const vendorEmail = await vendor.findOne({ username });
+        const vendorEmail = await vendor.findOne({ email });
         if (!vendorEmail) {
-            return res.status(400).json({ msg: 'username not found' });
+            return res.status(400).json({ msg: 'email not found' });
         }
         const isMatch = await bcrypt.compare(password, vendorEmail.password);
         if (!isMatch) {
