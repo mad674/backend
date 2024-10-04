@@ -19,6 +19,11 @@ const vendorSchema=new mongoose.Schema({
         default:[]
         // required:true
     },
+    colorimg:{
+        type:[String],
+        default:[]
+        // required:true
+    },
     otp:{
         type:String,
         default:0

@@ -1,36 +1,18 @@
-// const express=require('express');
-// const app=express();
-// const PORT= process.env.PORT || 4000;
-// const mongoose=require('mongoose')
-// const dotenv=require('dotenv')
-// const bodyparser=require('body-parser');
-// const vendorRoutes=require('./routes/VendorRoutes');
-// const cors=require('cors');
-// dotenv.config();
-// mongoose.connect(process.env.MONGO_URI)
-//     .then(()=>console.log('connected to mongoDB'))
-//     .catch((err)=>console.log(err));
-
-//     // app.use(express.json());
-// app.use(bodyparser.json());
-// app.use(cors());
-// app.use('/vendor',vendorRoutes);
-
-// app.use(express.json());
-// app.listen(PORT,()=>console.log(`server is running on port ${PORT}`))
-// app.use('/home',(req,res)=>{
-//     res.send('<h1>welcome to jewelry</h1>')
-// })
 const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 4000;
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const vendorRoutes = require('./routes/VendorRoutes');
 const cors = require('cors');
-const path=require('path');
+const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
+const FormData = require('form-data');
+const fetch = require('node-fetch'); // Node-fetch for using fetch in Node.js
 dotenv.config();
-// const authRouter=require('./routes/authRouter');
+const vendor=require('./models/Vendor');
+const app = express();
+const PORT = process.env.PORT || 4000;
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Connected to MongoDB'))
@@ -38,15 +20,21 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Middleware setup
 app.use(express.json()); // Use Express's built-in JSON parser
-app.use(cors());
+app.use(cors()); // Enable CORS for all routes
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve uploaded files
+app.use('/output', express.static(path.join(__dirname, 'output'))); // Serve generated output files
 
-// Routes
 app.use('/vendor', vendorRoutes);
-app.use('/home', (req, res) => {
+
+// Home route
+app.get('/home', (req, res) => {
     res.send('<h1>Welcome to Jewelry</h1>');
 });
-// app.use('/auth',authRouter);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use((req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    next();
+  });
+  
 // Start the server
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
-

@@ -2,14 +2,20 @@ const vendor = require('../models/Vendor');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
-const multer = require('multer');
-const nodemailer = require("nodemailer");
 dotenv.config();
+const nodemailer = require("nodemailer");
 const querystring = require('querystring');
 var https = require('follow-redirects').https;
 const { v4: uuidv4 } = require('uuid');
 var messageId = uuidv4();
 const secretkey = process.env.Whatisyourname;
+const fs = require('fs');
+const path = require('path');
+const mongoose = require('mongoose');
+const { oauth2Client } = require('../Middlewares/googleconfig');
+const { spawn } = require('child_process');
+const FormData = require('form-data');
+
 const vendorRegister = async (req, res) => {
     const { username,email, password, confirmPassword } = req.body;
     try {
@@ -108,8 +114,6 @@ const updateVendor = async (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
     }
   };
-
-
 const deleteVendor = async (req, res) => {
     try {
         const deletedVendor = await vendor.findByIdAndDelete(req.params.id);
@@ -121,17 +125,6 @@ const deleteVendor = async (req, res) => {
         res.status(500).json({ error: 'internal server error', success: false });
     }
 }
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
-
-const upload = multer({ storage });
 const imgvendor = async (req, res) => {
     try {
         // Extract filenames from the uploaded files
@@ -160,48 +153,53 @@ const imgvendor = async (req, res) => {
         res.status(500).json({ error: 'Internal server error', success: false });
     }
 };
-
-const Vendor = require('../models/Vendor'); // Import the Vendor model
-const fs = require('fs');
-const path = require('path');
-
-const deleteImage = async (req, res) => {
+const sktvendor = async (req, res) => {
     try {
-        const vendorId = req.params.id;
-        const imageName = req.params.Name;
-        console.log(vendorId, imageName);
+        const file = req.body; // The uploaded file
+        const user = req.params.user; // The user ID from the URL
 
-        // Correctly reference the Vendor model
-        const vendorRecord = await Vendor.findById(vendorId); // Rename to vendorRecord
+        // Log request body for debugging
+        console.log("Request body:", req.body);
 
-        if (!vendorRecord) {
+        if (!file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Log the file and user info for debugging
+        console.log(`Received file: ${file.filename} from user: ${user}`);
+
+        // Simulate vendor model update
+        const existingVendor = await vendor.findById(user);
+        if (!existingVendor) {
             return res.status(404).json({ msg: 'Vendor not found' });
         }
 
-        // Remove image reference from database
-        const imageIndex = vendorRecord.images.indexOf(imageName);
-        if (imageIndex > -1) {
-            vendorRecord.images.splice(imageIndex, 1);
-            await vendorRecord.save();
+        // Initialize the colorimg array if it doesn't exist
+        if (!existingVendor.colorimg) {
+            existingVendor.colorimg = [];
+        }
+        const isFileExists = existingVendor.colorimg.some(
+            (img) => img.toLowerCase() === file.filename.toLowerCase()
+        );
+
+        if (!isFileExists) {
+            // Append the new image to the array
+            existingVendor.colorimg.push(file.filename);
+            await existingVendor.save();
+            // res.status(200).json({ message: 'Image uploaded and saved successfully' });
         }
 
-        // Delete the image file from filesystem
-        const filePath = path.join(__dirname, '../uploads', imageName);
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                return res.status(500).json({ error: 'Failed to delete image from filesystem' });
-            }
-            res.status(200).json({ msg: 'Image deleted successfully' });
+        // Send a success response
+        res.status(200).json({
+            message: 'Image uploaded successfully',
+            fileName: file.filename,
+            user: user
         });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Internal server error' });
+    } catch (error) {
+        console.error('Error uploading image:', error);
+        res.status(500).json({ error: 'Error uploading image' });
     }
-};
-
-const mongoose = require('mongoose');
-const { oauth2Client } = require('../Middlewares/googleconfig');
-
+}
 const getimage = async (req, res) => {
     try {
         const vendorData = await vendor.findById(req.params.id);
@@ -214,41 +212,6 @@ const getimage = async (req, res) => {
         res.status(500).json({ error: 'internal server error', success: false });
     }
 };
-
-const deleteImg= async (req, res) => {
-    try {
-    //   const { vendorId } = req.params;
-      
-      // Find the vendor by ID
-      const vendor = await Vendor.findById(req.params.id);
-      if (!vendor) {
-        return res.status(404).json({ error: 'Vendor not found' });
-      }
-    //   console.log(vendor);
-      // Delete each image file from the uploads folder
-      for (const image of vendor.images) {
-        const filePath = path.join(__dirname, '../uploads/', image);
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.error('Error deleting image file:', err);
-          }
-        });
-      }
-  
-      // Clear the images array
-      vendor.images = [];
-      
-      // Save the vendor after removing all image references
-      await vendor.save();
-  
-      res.json({ message: 'All images deleted successfully' });
-    //   window.location.reload();
-    } catch (error) {
-      console.error('Error deleting all images:', error);
-      res.status(500).json({ error: 'Server error' });
-    }
-  };
-
 const forgotmail=async(req,res)=>{
     const {email}=req.body;
     console.log(email);
@@ -323,4 +286,131 @@ const googlelogin = async (req, res) => {
     }
 };
 
-module.exports = { vendorRegister, vendorLogin, getvendor, single, updateVendor, deleteVendor, imgvendor, deleteImage, getimage ,deleteImg,forgotmail,googlelogin};
+const predict = async (req, res) => {
+    try {
+        const imageEntry = await vendor.findById(req.params.id);
+        if (!imageEntry || !imageEntry.images.length) {
+            return res.status(404).json({ error: 'No images found in the database' });
+        }
+        
+        const imageName = imageEntry.images[imageEntry.images.length - 1];
+        const imagePath = `${process.env.webpath}/uploads/${imageName}`;
+        console.log('Image Path:', imagePath);
+        const response = await fetch(imagePath);  
+        if (!response.ok) {
+            return res.status(404).json({ error: 'Image file not found at the URL' });
+        }
+        const formData = new FormData();
+        formData.append('image', imagePath, 'base64');
+        const apiResponse = await fetch(`${process.env.FLASK_URL}/predict`, {
+            method: 'POST',
+            body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        if (!apiResponse.ok) {
+            const errorBody = await apiResponse.text();
+            console.error('Error from Flask API:', errorBody);
+            throw new Error('Error from Flask API: ' + apiResponse.statusText);
+        }
+        const result = await apiResponse.json();
+        res.status(200).json({ result, success: true });
+    } catch (error) {
+        console.error('Error communicating with Flask API:', error);
+        res.status(500).json({ error: 'Error making prediction' });
+    }
+};
+const compareOtp = async (req, res) => {
+    const { otp, byotp } = req.body;
+    try {
+        const isMatch = await bcrypt.compare(otp, byotp);
+        res.send({
+            message: isMatch ? "Password matched" : "Password not matched",
+            success: isMatch
+        });
+    } catch (error) {
+        res.status(500).send({ message: "Error comparing passwords", success: false });
+    }
+}
+//function to for delete image
+const deleteimage = async (req, res) => {
+    const { image } = req.body; // The image filename to delete
+    const token = req.headers.authorization.split(' ')[1]; // Extract JWT token from headers
+    try {
+        // Decode JWT to get vendor ID
+        const decodedToken = jwt.decode(token);
+        const vendorId = decodedToken.vendorid;
+
+        // Find vendor by ID
+        const v = await vendor.findById(vendorId);
+        if (!v) {
+            return res.status(404).json({ message: 'Vendor not found' });
+        }
+        // Check if the image exists in the vendor's image list
+        const imageExists = v.images.includes(image);
+        if (!imageExists) {
+            return res.status(404).json({ message: 'Image not found in the vendor profile' });
+        }
+        // Remove the image from the vendor's image list
+        v.images = v.images.filter(img => img !== image);
+        v.colorimg = v.colorimg.filter(img => img !== image);
+
+        // Save the updated vendor information to the database
+        await v.save();
+
+        // Delete the image file from the server's Multer uploads folder
+        const imagePath = path.join(__dirname, '../uploads/', image);
+        if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath); // Deletes the image file
+        }
+        const colimagePath = path.join(__dirname, '../output/', image);
+        if (fs.existsSync(colimagePath)) {
+            fs.unlinkSync(colimagePath); // Deletes the image file
+        }
+
+        return res.status(200).json({ message: 'Image deleted successfully from both the database and server' });
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        return res.status(500).json({ message: 'Failed to delete image', error });
+    }
+}
+const deleteAllImages=async (req, res) => {
+    const token = req.headers.authorization.split(' ')[1]; // Extract JWT token
+
+    try {
+        // Decode JWT to get vendor ID
+        const decodedToken = jwt.decode(token);
+        const vendorId = decodedToken.vendorid;
+
+        // Find vendor by ID
+        const v = await vendor.findById(vendorId);
+        if (!v) {
+            return res.status(404).json({ message: 'Vendor not found' });
+        }
+        // Delete all images from the Multer uploads folder (if they exist)
+        v.images.forEach((image) => {
+            const imagePath = path.join(__dirname, '../uploads/', image);
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath); // Deletes each image file from the server
+            }
+        });
+        v.colorimg.forEach((image) => {
+            const imagePath = path.join(__dirname, '../output/', image);
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath); // Deletes each image file from the server
+            }
+        });
+        v.images = [];
+        v.colorimg = [];
+        await v.save();
+
+        console.log('All images deleted successfully');
+
+        return res.status(200).json({ message: 'All images deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting all images:', error);
+        return res.status(500).json({ message: 'Failed to delete all images', error });
+    }
+}
+module.exports = { vendorRegister, vendorLogin, deleteimage,deleteAllImages,getvendor, single, updateVendor, deleteVendor, imgvendor, getimage ,forgotmail,googlelogin,sktvendor,predict,compareOtp};
