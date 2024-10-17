@@ -1,12 +1,12 @@
 const express = require('express');
 const multer = require('multer');
-const bcrypt = require('bcryptjs');
-const nodemailer = require("nodemailer");
+// const bcrypt = require('bcryptjs');
+// const nodemailer = require("nodemailer");
 const vendorController = require('../controllers/VendorController');
-const verifyToken = require('../Middlewares/verifyToken');
+// const verifyToken = require('../Middlewares/verifyToken');
 const fs = require('fs');
 const path = require('path');
-const vendor = require('../models/Vendor');
+// const vendor = require('../models/Vendor');
 const router = express.Router();
 
 // Ensure directories exist
@@ -16,7 +16,7 @@ const ensureDirectoryExistence = (dir) => {
     }
 };
 
-// Multer setup for image uploads
+// Multer setup for sketch img
 const upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
@@ -29,7 +29,7 @@ const upload = multer({
         }
     })
 });
-// Set up multer storage and file handling
+// Set up multer storage color img
 const up = multer({ 
     storage: multer.diskStorage({
         destination: (req, file, cb) => {

@@ -4,16 +4,16 @@ const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 dotenv.config();
 const nodemailer = require("nodemailer");
-const querystring = require('querystring');
-var https = require('follow-redirects').https;
+// const querystring = require('querystring');
+// var https = require('follow-redirects').https;
 const { v4: uuidv4 } = require('uuid');
 var messageId = uuidv4();
 const secretkey = process.env.Whatisyourname;
 const fs = require('fs');
 const path = require('path');
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 const { oauth2Client } = require('../Middlewares/googleconfig');
-const { spawn } = require('child_process');
+// const { spawn } = require('child_process');
 const FormData = require('form-data');
 
 const vendorRegister = async (req, res) => {
@@ -71,7 +71,6 @@ const getvendor = async (req, res) => {
         res.status(500).json({ error: 'internal server error', success: false });
     }
 }
-
 const single = async (req, res) => {
     try {
         const employee = await vendor.findById(req.params.id);

@@ -4,14 +4,17 @@ const dotenv = require('dotenv');
 const vendorRoutes = require('./routes/VendorRoutes');
 const cors = require('cors');
 const path = require('path');
-const multer = require('multer');
-const fs = require('fs');
-const FormData = require('form-data');
-const fetch = require('node-fetch'); // Node-fetch for using fetch in Node.js
+// const multer = require('multer');
+// const fs = require('fs');
+// const FormData = require('form-data');
+// const fetch = require('node-fetch'); // Node-fetch for using fetch in Node.js
 dotenv.config();
-const vendor=require('./models/Vendor');
+// const vendor=require('./models/Vendor');
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+
+
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
