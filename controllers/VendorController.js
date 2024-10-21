@@ -23,7 +23,7 @@ const vendorRegister = async (req, res) => {
         const emailverfy=await vendor.findOne({email});
         if(emailverfy){
             return res.status(400).json({ msg: 'email already exists' });
-        }
+        }0
         if (vendorEmail) {
             return res.status(400).json({ msg: 'username already exists' });
         }
@@ -37,7 +37,7 @@ const vendorRegister = async (req, res) => {
         const token = jwt.sign({ id: newVendor._id }, secretkey, { expiresIn: process.env.JWT_EXPIRE });
         res.status(201).json({ msg: 'vendor created successfully', success: true, token });
         // console.log('registered successfully',token);
-    } catch (err) {
+    } catch (err) { 
         console.log(err);
         res.status(500).json({ error: 'internal server error', success: false });
     }
