@@ -60,7 +60,8 @@ router.get('/getimg/:id', vendorController.getimage);
 //updating database
 router.put('/updatevendor/:id', vendorController.updateVendor);
 //connection for flask
-router.post('/predict/:id', vendorController.predict);
+router.post('/gold/:id', vendorController.gold);
+router.post('/silver/:id', vendorController.silver);
 //compare otp for login
 router.post('/comparepassword', vendorController.compareOtp);
 // routes for deleting images

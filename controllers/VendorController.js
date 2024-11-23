@@ -285,7 +285,7 @@ const googlelogin = async (req, res) => {
     }
 };
 
-const predict = async (req, res) => {
+const gold = async(req, res) => {
     try {
         const imageEntry = await vendor.findById(req.params.id);
         if (!imageEntry || !imageEntry.images.length) {
@@ -301,7 +301,43 @@ const predict = async (req, res) => {
         }
         const formData = new FormData();
         formData.append('image', imagePath, 'base64');
-        const apiResponse = await fetch(`${process.env.FLASK_URL}/predict`, {
+        const apiResponse = await fetch(`${process.env.FLASK_URL}/gold`, {
+            method: 'POST',
+            body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        if (!apiResponse.ok) {
+            const errorBody = await apiResponse.text();
+            console.error('Error from Flask API:', errorBody);
+            throw new Error('Error from Flask API: ' + apiResponse.statusText);
+        }
+        const result = await apiResponse.json();
+        res.status(200).json({ result, success: true });
+    } catch (error) {
+        console.error('Error communicating with Flask API:', error);
+        res.status(500).json({ error: 'Error making prediction' });
+    }
+};
+
+const silver = async(req, res) => {
+    try {
+        const imageEntry = await vendor.findById(req.params.id);
+        if (!imageEntry || !imageEntry.images.length) {
+            return res.status(404).json({ error: 'No images found in the database' });
+        }
+
+        const imageName = imageEntry.images[imageEntry.images.length - 1];
+        const imagePath = `${process.env.webpath}/uploads/${imageName}`;
+        console.log('Image Path:', imagePath);
+        const response = await fetch(imagePath);  
+        if (!response.ok) {
+            return res.status(404).json({ error: 'Image file not found at the URL' });
+        }
+        const formData = new FormData();
+        formData.append('image', imagePath, 'base64');
+        const apiResponse = await fetch(`${process.env.FLASK_URL}/silver`, {
             method: 'POST',
             body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
             headers: {
@@ -412,4 +448,4 @@ const deleteAllImages=async (req, res) => {
         return res.status(500).json({ message: 'Failed to delete all images', error });
     }
 }
-module.exports = { vendorRegister, vendorLogin, deleteimage,deleteAllImages,getvendor, single, updateVendor, deleteVendor, imgvendor, getimage ,forgotmail,googlelogin,sktvendor,predict,compareOtp};
+module.exports = { vendorRegister, vendorLogin, deleteimage,deleteAllImages,getvendor, single, updateVendor, deleteVendor, imgvendor, getimage ,forgotmail,googlelogin,sktvendor,gold,silver,compareOtp};
