@@ -26,7 +26,8 @@ app.use(express.json()); // Use Express's built-in JSON parser
 app.use(cors()); // Enable CORS for all routes
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve uploaded files
 app.use('/output', express.static(path.join(__dirname, 'output'))); // Serve generated output files
-
+app.use('/rcimg', express.static(path.join(__dirname, 'rcimg')));
+app.use('/rsimg', express.static(path.join(__dirname, 'rsimg'))); 
 app.use('/vendor', vendorRoutes);
 
 // Home route

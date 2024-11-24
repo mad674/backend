@@ -15,7 +15,6 @@ const ensureDirectoryExistence = (dir) => {
         fs.mkdirSync(dir, { recursive: true });
     }
 };
-
 // Multer setup for sketch img
 const upload = multer({
     storage: multer.diskStorage({
