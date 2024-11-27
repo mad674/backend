@@ -230,11 +230,11 @@ const feedback = async (req, res) => {
             text: "feedback from user!", // plain text body
             html: `<p>This is ${firstname+" "+lastname}. <br> This is my email ${email}. <br> This is my Phone number ${mobile}. <br> This is my feedback : ${concern}</p> <br> <p>Thanks & Regards</p> <p>${firstname+" "+lastname}</p>`, // html body
         });
-        // if (info.messageId) {
-        //     console.log("Email sent successfully");
-        // } else {
-        //     console.log("Email sent failed");
-        // }
+        if (info.messageId) {
+            console.log("Email sent successfully");
+        } else {
+            console.log("Email sent failed");
+        }
         res.status(200).json({ feedback: "feedback sent successfully", success: true });
     } catch (err) {
         console.error('Error in getimage:', err.message);
