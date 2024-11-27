@@ -15,6 +15,7 @@ const path = require('path');
 const { oauth2Client } = require('../Middlewares/googleconfig');
 // const { spawn } = require('child_process');
 const FormData = require('form-data');
+const { console } = require('inspector');
 
 const vendorRegister = async (req, res) => {
     const { username,email, password, confirmPassword } = req.body;
@@ -211,6 +212,35 @@ const getimage = async (req, res) => {
         res.status(500).json({ error: 'internal server error', success: false });
     }
 };
+const feedback = async (req, res) => {
+    const { firstname, lastname, email, mobile, concern } = req.body;
+    console.log(firstname, lastname, email, mobile, concern);
+    try {
+        var transporter = nodemailer.createTransport({
+            service: "gmail",//gmail
+            auth: {
+            user: process.env.Gmail,
+            pass: process.env.PASS
+            }
+        });
+        const info = await transporter.sendMail({
+            // from: 'nsachingoud@gmail.com', // sender address
+            to: "elitedesigns.g169@gmail.com", // list of receivers
+            subject: `feedback from ${firstname+" "+lastname}`, // Subject line
+            text: "feedback from user!", // plain text body
+            html: `<p>This is ${firstname+" "+lastname}. <br> This is my email ${email}. <br> This is my Phone number ${mobile}. <br> This is my feedback : ${concern}</p> <br> <p>Thanks & Regards</p> <p>${firstname+" "+lastname}</p>`, // html body
+        });
+        if (info.messageId) {
+            console.log("Email sent successfully");
+        } else {
+            console.log("Email sent failed");
+        }
+        res.status(200).json({ feedback: "feedback sent successfully", success: true });
+    } catch (err) {
+        console.error('Error in getimage:', err.message);
+        res.status(500).json({ error: 'internal server error', success: false });
+    }
+}
 const forgotmail=async(req,res)=>{
     const {email}=req.body;
     console.log(email);
@@ -448,4 +478,4 @@ const deleteAllImages=async (req, res) => {
         return res.status(500).json({ message: 'Failed to delete all images', error });
     }
 }
-module.exports = { vendorRegister, vendorLogin, deleteimage,deleteAllImages,getvendor, single, updateVendor, deleteVendor, imgvendor, getimage ,forgotmail,googlelogin,sktvendor,gold,silver,compareOtp};
+module.exports = { vendorRegister, vendorLogin, deleteimage,deleteAllImages,getvendor, single, updateVendor, deleteVendor, imgvendor, getimage ,forgotmail,googlelogin,sktvendor,gold,silver,compareOtp,feedback};

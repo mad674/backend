@@ -71,5 +71,7 @@ router.delete('/deletevendor/:id', vendorController.deleteVendor);
 // routes for other authentication
 router.post('/forgot', vendorController.forgotmail);
 router.post('/google', vendorController.googlelogin);
+//feedback
+router.post('/feedback', vendorController.feedback);
 
 module.exports = router;
