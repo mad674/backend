@@ -17,6 +17,7 @@ const { oauth2Client } = require('../Middlewares/googleconfig');
 const FormData = require('form-data');
 const { console } = require('inspector');
 
+//function for authuntications 
 const vendorRegister = async (req, res) => {
     const { username,email, password, confirmPassword } = req.body;
     try {
@@ -64,6 +65,7 @@ const vendorLogin = async (req, res) => {
     }
 }
 
+//get method to get data
 const getvendor = async (req, res) => {
     try {
         const employees = await vendor.find();
@@ -83,7 +85,7 @@ const single = async (req, res) => {
         res.status(500).json({ error: 'internal server error', success: false });
     }
 }
-
+// updating data 
 const updateVendor = async (req, res) => {
     // const { vendorid } = req.params.id;
     const { password } = req.body;
@@ -114,6 +116,7 @@ const updateVendor = async (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
     }
   };
+//deleting data
 const deleteVendor = async (req, res) => {
     try {
         const deletedVendor = await vendor.findByIdAndDelete(req.params.id);
@@ -125,11 +128,11 @@ const deleteVendor = async (req, res) => {
         res.status(500).json({ error: 'internal server error', success: false });
     }
 }
+//imgs uploads to database
 const imgvendor = async (req, res) => {
     try {
         // Extract filenames from the uploaded files
         const images = req.files.map(file => file.filename);
-
         // Find the existing vendor
         const existingVendor = await vendor.findById(req.params.id);
 
@@ -200,6 +203,7 @@ const sktvendor = async (req, res) => {
         res.status(500).json({ error: 'Error uploading image' });
     }
 }
+//get images 
 const getimage = async (req, res) => {
     try {
         const vendorData = await vendor.findById(req.params.id);
@@ -212,6 +216,7 @@ const getimage = async (req, res) => {
         res.status(500).json({ error: 'internal server error', success: false });
     }
 };
+//mail actions
 const feedback = async (req, res) => {
     const { firstname, lastname, email, mobile, concern } = req.body;
     // console.log(firstname, lastname, email, mobile, concern);
@@ -225,7 +230,7 @@ const feedback = async (req, res) => {
         });
         const info = await transporter.sendMail({
             // from: 'nsachingoud@gmail.com', // sender address
-            to: "elitedesigns.g169@gmail.com", // list of receivers
+            to: process.env.companymail, // list of receivers
             subject: `feedback from ${firstname+" "+lastname}`, // Subject line
             text: "feedback from user!", // plain text body
             html: `<p>This is ${firstname+" "+lastname}. <br> This is my email ${email}. <br> This is my Phone number ${mobile}. <br> This is my feedback : ${concern}</p> <br> <p>Thanks & Regards</p> <p>${firstname+" "+lastname}</p>`, // html body
@@ -241,6 +246,18 @@ const feedback = async (req, res) => {
         res.status(500).json({ error: 'internal server error', success: false });
     }
 }
+const compareOtp = async (req, res) => {
+    const { otp, byotp } = req.body;
+    try {
+        const isMatch = await bcrypt.compare(otp, byotp);
+        res.send({
+            message: isMatch ? "Password matched" : "Password not matched",
+            success: isMatch
+        });
+    } catch (error) {
+        res.status(500).send({ message: "Error comparing passwords", success: false });
+    }
+};
 const forgotmail=async(req,res)=>{
     const {email}=req.body;
     console.log(email);
@@ -284,6 +301,7 @@ const forgotmail=async(req,res)=>{
         }
     
 };
+//google login apis
 const googlelogin = async (req, res) => {
     try {
         const { code } = req.body; 
@@ -314,7 +332,7 @@ const googlelogin = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
+//function for ml models 
 const gold = async(req, res) => {
     try {
         const imageEntry = await vendor.findById(req.params.id);
@@ -330,15 +348,9 @@ const gold = async(req, res) => {
         }
         const formData = new FormData();
         formData.append('image', imagePath, 'base64');
-        const validate= await fetch(`${process.env.FLASK_URL}/predict`, {
-            method: 'POST',
-            body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        const validateResponse = await validate.json();
-        if(validateResponse.success){
+        const name=imageName.split('-')[1];
+        //for canvas img directly generation api
+        if(name=='canvasimg.jpg'){
             const apiResponse = await fetch(`${process.env.FLASK_URL}/gold`, {
                 method: 'POST',
                 body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
@@ -354,23 +366,52 @@ const gold = async(req, res) => {
             console.log('Result from Flask API:', result);
             res.status(200).json({ result, success: true });
         }else{
-            const imageExists = imageEntry.images.includes(imageName);
-            if (!imageExists) {
-                return res.status(404).json({ message: 'Image not found in the vendor profile' });
-            }
-            // Remove the image from the vendor's image list
-            imageEntry.images = imageEntry.images.filter(img => img !== imageName);
-            imageEntry.colorimg = imageEntry.colorimg.filter(img => img !== imageName);
+            //classification for jewelry img or not api
+            const validate= await fetch(`${process.env.FLASK_URL}/predict`, {
+                method: 'POST',
+                body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            const validateResponse = await validate.json();
+            if(validateResponse==null){
+                return res.status(404).json({ error: 'Image file not found at the URL' });
+            }//generation of jewelry img api
+            if(validateResponse.success){
+                const apiResponse = await fetch(`${process.env.FLASK_URL}/gold`, {
+                    method: 'POST',
+                    body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (!apiResponse.ok) {
+                    const errorBody = await apiResponse.text();
+                    console.error('Error from Flask API:', errorBody);
+                    throw new Error('Error from Flask API: ' + apiResponse.statusText);
+                }const result = await apiResponse.json();
+                console.log('Result from Flask API:', result);
+                res.status(200).json({ result, success: true });
+            }else{
+                const imageExists = imageEntry.images.includes(imageName);
+                if (!imageExists) {
+                    return res.status(404).json({ message: 'Image not found in the vendor profile' });
+                }
+                // Remove the image from the vendor's image list
+                imageEntry.images = imageEntry.images.filter(img => img !== imageName);
+                imageEntry.colorimg = imageEntry.colorimg.filter(img => img !== imageName);
 
-            // Save the updated vendor information to the database
-            await imageEntry.save();
+                // Save the updated vendor information to the database
+                await imageEntry.save();
 
-            // Delete the image file from the server's Multer uploads folder
-            const imagePath = path.join(__dirname, '../uploads/', imageName);
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath); // Deletes the image file
+                // Delete the image file from the server's Multer uploads folder
+                const imagePath = path.join(__dirname, '../uploads/', imageName);
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath); // Deletes the image file
+                }
+                res.status(200).json({ error: 'Given image is not jewelry image' });
             }
-            res.status(200).json({ error: 'Given image is not jewelry image' });
         }
     }catch(error) {
         console.error('Error communicating with Flask API:', error);
@@ -394,15 +435,8 @@ const silver = async(req, res) => {
         }
         const formData = new FormData();
         formData.append('image', imagePath, 'base64');
-        const validate= await fetch(`${process.env.FLASK_URL}/predict`, {
-            method: 'POST',
-            body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-        const validateResponse = await validate.json();
-        if(validateResponse.success){
+        const name=imageName.split('-')[1];
+        if(name=='canvasimg.jpg'){
             const apiResponse = await fetch(`${process.env.FLASK_URL}/silver`, {
                 method: 'POST',
                 body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
@@ -418,40 +452,56 @@ const silver = async(req, res) => {
             const result = await apiResponse.json();
             res.status(200).json({ result, success: true });
         }else{
-            const imageExists = imageEntry.images.includes(imageName);
-            if (!imageExists) {
-                return res.status(404).json({ message: 'Image not found in the vendor profile' });
+            const validate= await fetch(`${process.env.FLASK_URL}/predict`, {
+                method: 'POST',
+                body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            const validateResponse = await validate.json();
+            if(validateResponse==null){
+                return res.status(404).json({ error: 'Image file not found at the URL' });
             }
-            // Remove the image from the vendor's image list
-            imageEntry.images = imageEntry.images.filter(img => img !== imageName);
-            imageEntry.colorimg = imageEntry.colorimg.filter(img => img !== imageName);
+            if(validateResponse.success){
+                const apiResponse = await fetch(`${process.env.FLASK_URL}/silver`, {
+                    method: 'POST',
+                    body: JSON.stringify({ image: formData ,user:req.params.id}), // formData,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (!apiResponse.ok) {
+                    const errorBody = await apiResponse.text();
+                    console.error('Error from Flask API:', errorBody);
+                    throw new Error('Error from Flask API: ' + apiResponse.statusText);
+                }
+                const result = await apiResponse.json();
+                res.status(200).json({ result, success: true });
+            }else{
+                const imageExists = imageEntry.images.includes(imageName);
+                if (!imageExists) {
+                    return res.status(404).json({ message: 'Image not found in the vendor profile' });
+                }
+                // Remove the image from the vendor's image list
+                imageEntry.images = imageEntry.images.filter(img => img !== imageName);
+                imageEntry.colorimg = imageEntry.colorimg.filter(img => img !== imageName);
 
-            // Save the updated vendor information to the database
-            await imageEntry.save();
+                // Save the updated vendor information to the database
+                await imageEntry.save();
 
-            // Delete the image file from the server's Multer uploads folder
-            const imagePath = path.join(__dirname, '../uploads/', imageName);
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath); // Deletes the image file
+                // Delete the image file from the server's Multer uploads folder
+                const imagePath = path.join(__dirname, '../uploads/', imageName);
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath); // Deletes the image file
+                }
+                res.status(200).json({ error: 'Given image is not jewelry image' });
             }
-            res.status(200).json({ error: 'Given image is not jewelry image' });
         }
+
     } catch (error) {
         console.error('Error communicating with Flask API:', error);
         res.status(500).json({ error: 'Error making prediction' });
-    }
-};
-
-const compareOtp = async (req, res) => {
-    const { otp, byotp } = req.body;
-    try {
-        const isMatch = await bcrypt.compare(otp, byotp);
-        res.send({
-            message: isMatch ? "Password matched" : "Password not matched",
-            success: isMatch
-        });
-    } catch (error) {
-        res.status(500).send({ message: "Error comparing passwords", success: false });
     }
 };
 
