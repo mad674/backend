@@ -119,8 +119,27 @@ const updateVendor = async (req, res) => {
 //deleting data
 const deleteVendor = async (req, res) => {
     try {
+        const v = await vendor.findById(req.params.id);
+        if (!v) {
+            return res.status(404).json({ msg: 'employee not found' });
+        }
+        v.images.forEach((image) => {
+            const imagePath = path.join(__dirname, '../uploads/', image);
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath); // Deletes each image file from the server
+            }
+        });
+        v.colorimg.forEach((image) => {
+            const imagePath = path.join(__dirname, '../output/', image);
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath); // Deletes each image file from the server
+            }
+        });
+        v.images = [];
+        v.colorimg = [];
+        await v.save();
         const deletedVendor = await vendor.findByIdAndDelete(req.params.id);
-        if (!deletedVendor) {
+        if(!deletedVendor){
             return res.status(404).json({ msg: 'employee not found' });
         }
         res.status(200).json({ deletedVendor, success: true });
