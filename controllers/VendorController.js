@@ -66,7 +66,7 @@ const vendorLogin = async (req, res) => {
 const getvendor = async (req, res) => {
     try {
         const employees = await vendor.find();
-        res.status(200).json({ users:employees, success: true });
+        res.status(200).json({ employees, success: true });
     } catch (err) {
         res.status(500).json({ error: 'internal server error', success: false });
     }
